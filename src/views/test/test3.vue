@@ -25,32 +25,34 @@
     >
       <el-table-column align="center" label="User ID" width="95">
         <template slot-scope="scope">
-          {{ scope.row.userId }}
+          {{ scope.row.id }}
         </template>
       </el-table-column>
       <el-table-column label="Username">
         <template slot-scope="scope">
-          {{ scope.row.username }}
+          {{ scope.row.userId }}
         </template>
       </el-table-column>
-      <el-table-column label="User Input">
+<el-table-column label="机器人回复">
+  <template slot-scope="scope">
+    <div v-if="!isRowExpanded(scope.row)" class="ellipsis-text">
+      {{ getShortText(scope.row.prompt, 10) }}
+      <span v-if="isTextOverflow(scope.row.prompt)" class="expand-link" @click="toggleRow(scope.row)">展开</span>
+    </div>
+    <div v-else>
+      {{ scope.row.prompt }}
+      <span class="collapse-link" @click="toggleRow(scope.row)">收起</span>
+    </div>
+  </template>
+</el-table-column>
+      <el-table-column label="用户输入">
         <template slot-scope="scope">
-          {{ scope.row.userInput }}
-        </template>
-      </el-table-column>
-      <el-table-column label="Robot Reply">
-        <template slot-scope="scope">
-          {{ scope.row.robotReply }}
+          {{ scope.row.response }}
         </template>
       </el-table-column>
       <el-table-column label="Reply Time">
         <template slot-scope="scope">
-          {{ scope.row.replyTime }}
-        </template>
-      </el-table-column>
-      <el-table-column label="Resolved">
-        <template slot-scope="scope">
-          <span>{{ scope.row.resolved ? 'Yes' : 'No' }}</span>
+          {{ scope.row.requestTime }}
         </template>
       </el-table-column>
     </el-table>
@@ -86,9 +88,10 @@ export default {
       pagination: {
         currentPage: 1,
         pageSize: 10,
-        pageSizes: [10, 20, 30],
-        total: 0
-      }
+        pageSizes: [5, 10, 30],
+        total: 50
+      },
+      expandedRows: []
     }
   },
   created() {
@@ -98,31 +101,27 @@ export default {
     fetchData() {
       this.listLoading = true
 
-      // 使用 params 来发送请求
-  const params = {
-    username: this.search.username,
-    startDate: this.search.startDate,
-    endDate: this.search.endDate,
-    page: this.pagination.currentPage, // 从分页对象中获取当前页
-    size: this.pagination.pageSize // 从分页对象中获取每页大小
-  };
+      const params = {
+        username: this.search.username,
+        startDate: this.search.startDate,
+        endDate: this.search.endDate,
+        page: this.pagination.currentPage,
+        size: this.pagination.pageSize
+      };
 
       axios.get('http://localhost:9999/api/chat-logs', {
         params: params
       })
         .then(response => {
-          // 请求成功后的处理
           this.list = response.data
           this.listLoading = false
         })
         .catch(error => {
-          // 请求发生错误的处理
           console.error(error)
           this.listLoading = false
         })
     },
     searchLogs() {
-      // 重新从第一页开始查询
       this.pagination.currentPage = 1
       this.fetchData()
     },
@@ -133,6 +132,26 @@ export default {
     handleCurrentChange(currentPage) {
       this.pagination.currentPage = currentPage
       this.fetchData()
+    },
+     isTextOverflow(text) {
+        return text.length > 10; // 这里的10是指定的字数限制
+      },
+    toggleRow(row) {
+      if (this.isRowExpanded(row)) {
+        this.expandedRows = this.expandedRows.filter(item => item !== row)
+      } else {
+        this.expandedRows.push(row)
+      }
+    },
+    getShortText(text, maxLength) {
+      if (text.length <= maxLength) {
+        return text
+      } else {
+        return text.slice(0, maxLength) + '...'
+      }
+    },
+    isRowExpanded(row) {
+      return this.expandedRows.includes(row)
     }
   }
 }
@@ -140,15 +159,31 @@ export default {
 
 <style>
 .app-container {
-  padding: 20px;
+ padding: 20px;
 }
+
 .search-form {
   margin-bottom: 20px;
 }
+
 .pagination-container {
   margin-top: 20px;
 }
+
 .pagination {
   text-align: right;
+}
+
+.ellipsis-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expand-link,
+.collapse-link {
+  cursor: pointer;
+  color: blue;
+  margin-left: 5px;
 }
 </style>

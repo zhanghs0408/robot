@@ -1,45 +1,15 @@
 <template>
-  <div class="app-container">
-    <el-table
-      v-loading="listLoading"
-      :data="list"
-      element-loading-text="Loading"
-      border
-      fit
-      highlight-current-row
-    >
-      <el-table-column align="center" label="ID" width="95">
-        <template slot-scope="scope">
-          {{ scope.$index }}
-        </template>
-      </el-table-column>
-      <el-table-column label="Title">
-        <template slot-scope="scope">
-          {{ scope.row.title }}
-        </template>
-      </el-table-column>
-      <el-table-column label="Author" width="110" align="center">
-        <template slot-scope="scope">
-          <span>{{ scope.row.author }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="Pageviews" width="110" align="center">
-        <template slot-scope="scope">
-          {{ scope.row.pageviews }}
-        </template>
-      </el-table-column>
-      <el-table-column class-name="status-col" label="Status" width="110" align="center">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.status | statusFilter">{{ scope.row.status }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column align="center" prop="created_at" label="Display_time" width="200">
-        <template slot-scope="scope">
-          <i class="el-icon-time" />
-          <span>{{ scope.row.display_time }}</span>
-        </template>
-      </el-table-column>
-    </el-table>
+  <div>
+    <div v-if="!isExpanded">
+      <span v-if="!backendData">{{ placeholderText }}</span>
+      <span v-else>{{ '这是从后端获取的数据：' + backendData }}</span>
+      <a @click="isExpanded = true" class="expand-link" v-if="!backendData">展开</a>
+      <a @click="isExpanded = true" class="expand-link" v-else>查看更多</a>
+    </div>
+    <div v-else>
+      {{ '这是从后端获取的数据：' + backendData }}
+      <a @click="isExpanded = false" class="collapse-link">收起</a>
+    </div>
   </div>
 </template>
 
@@ -47,14 +17,26 @@
 export default {
   data() {
     return {
-      list: [
-        { id: 1, title: 'Article 1', author: 'John Doe', pageviews: 100, status: 'published', display_time: '2023-08-20 10:00:00' },
-        { id: 2, title: 'Article 2', author: 'Jane Smith', pageviews: 200, status: 'draft', display_time: '2023-08-21 14:30:00' },
-        { id: 3, title: 'Article 3', author: 'James Brown', pageviews: 150, status: 'published', display_time: '2023-08-22 09:45:00' },
-        { id: 4, title: 'Article 4', author: 'Jessica Johnson', pageviews: 80, status: 'deleted', display_time: '2023-08-23 16:20:00' },
-      ],
-      listLoading: false
-    }
+      isExpanded: false,
+      placeholderText: '加载中...', // 占位文字
+      backendData: '' // 从后端获取的数据
+    };
+  },
+  created() {
+    // 在created钩子中，可以使用异步请求从后端获取数据并赋值给backendData属性
+    // 示例中使用setTimeout模拟异步请求
+    setTimeout(() => {
+      this.backendData = '这是从后端获取的数据';
+    }, 2000);
   }
-}
+};
 </script>
+
+<style>
+.expand-link,
+.collapse-link {
+  cursor: pointer;
+  color: blue;
+  text-decoration: underline;
+}
+</style>
