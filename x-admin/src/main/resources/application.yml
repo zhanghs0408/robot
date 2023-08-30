@@ -3,9 +3,14 @@ server:
 
 spring:
   datasource:
-    username: root
-    password: 1234
-    url: jdbc:mysql:///xdb
+    username: postgres
+    password: postgres
+    url: jdbc:postgresql://192.168.68.129:5432/optix_llm_db?currentSchema=optix
+    driver-class-name: org.postgresql.Driver
+    jpa:
+      properties:
+        hibernate:
+          default_schema: optix
   redis:
     port: 6379
     host: localhost
@@ -20,4 +25,6 @@ mybatis-plus:
       logic-delete-field: deleted
       logic-not-delete-value: 0
       logic-delete-value: 1
-
+  configuration:
+    map-underscore-to-camel-case: true
+  type-aliases-package: com.lantu.*.entity

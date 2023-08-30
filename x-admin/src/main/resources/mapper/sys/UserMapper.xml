@@ -3,10 +3,10 @@
 <mapper namespace="com.lantu.sys.mapper.UserMapper">
     <select id="getRoleNameByUserId" parameterType="Integer" resultType="String">
         SELECT
-            b.`role_name`
+            b.role_name
         FROM x_user_role a, x_role b
         WHERE
-            a.role_id = b.`role_id`
+            a.role_id = b.role_id
           AND a.user_id = #{userId}
     </select>
 </mapper>
