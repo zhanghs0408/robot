@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>图书管理</title>
+    <link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+    <script src="js/vue.js"></script>
+    <script src="element-ui/lib/index.js"></script>
+    <script src="js/axios-0.18.0.js"></script>
+</head>
+<body>
+<div id="app">
+    <!--搜索框-->
+    <el-input v-model="pagination.queryString" placeholder="图书名称" style="width: 200px"></el-input>
+    <el-button>查询</el-button>
+    <el-button type="primary" @click="showAdd">新建</el-button>
+    <!--表格-->
+    <el-table
+            size="small"
+            :data="tableData"
+            style="width: 100%">
+        <el-table-column
+                align="center"
+                label="序号"
+                type="index"
+                width="50">
+        </el-table-column>
+        <el-table-column
+                align="center"
+                prop="categoryName"
+                label="图书类别">
+        </el-table-column>
+        <el-table-column
+                align="center"
+                prop="name"
+                label="图书名称">
+        </el-table-column>
+        <el-table-column
+                align="center"
+                prop="description"
+                label="描述">
+        </el-table-column>
+        <el-table-column
+                align="center"
+                label="操作">
+            <template slot-scope="scope">
+                <el-button type="primary" size="mini" @click="showEdit(scope.row)">编辑</el-button>
+                <el-button type="danger" size="mini" @click="handleDelete(scope.row)">删除</el-button>
+            </template>
+        </el-table-column>
+    </el-table>
+    <!--分页条-->
+    <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="pagination.currentPage"
+            :page-sizes="[5, 10, 20, 50]"
+            :page-size="pagination.pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="pagination.total">
+    </el-pagination>
+    <!--新增对话框-->
+    <el-dialog
+            title="新增图书"
+            :visible.sync="addDialogVisible">
+        <el-form ref="addForm" :model="formData" :rules="rules" label-width="80px">
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="图书类别" prop="categoryId">
+                        <el-select v-model="formData.categoryId" placeholder="请选择图书类别">
+                            <el-option v-for="c in categories" :label="c.name" :value="c.id"></el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="图书名称" prop="name">
+                        <el-input v-model="formData.name"></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="24">
+                    <el-form-item label="描述">
+                        <el-input type="textarea" v-model="formData.description"></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-form-item>
+                <el-button type="primary" @click="handAdd">确定</el-button>
+                <el-button @click="addDialogVisible = false">取消</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+    <!--编辑对话框-->
+    <el-dialog
+            title="修改图书"
+            :visible.sync="editDialogVisible">
+        <el-form ref="editForm" :model="formData" :rules="rules" label-width="80px">
+            <el-row>
+                <el-col :span="12">
+                    <el-form-item label="图书类别" prop="categoryId">
+                        <el-select v-model="formData.categoryId" placeholder="请选择图书类别">
+                            <el-option label="计算机理论" value="1"></el-option>
+                            <el-option label="市场营销" value="2"></el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="图书名称" prop="name">
+                        <el-input v-model="formData.name"></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="24">
+                    <el-form-item label="描述">
+                        <el-input type="textarea" v-model="formData.description"></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-form-item>
+                <el-button type="primary" @click="handleEdit">确定</el-button>
+                <el-button @click="editDialogVisible = false">取消</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+</div>
+<script>
+    let app = new Vue({
+        // 托管的区域
+        el:"#app",
+        // 数据区
+        data:{
+            // 表格数据
+            tableData:[
+                {"categoryName":"计算机理论1","name":"Spring实战 第五版",description:"Spring入门经典教程,深入理解Spring原理技术内幕"},
+                {"categoryName":"计算机理论2","name":"Spring实战 第五版",description:"Spring入门经典教程,深入理解Spring原理技术内幕"},
+                {"categoryName":"计算机理论3","name":"Spring实战 第五版",description:"Spring入门经典教程,深入理解Spring原理技术内幕"},
+
+            ],
+            // 分页数据
+            pagination:{
+                // 总记录数
+                total: 200,
+                // 当前页码
+                currentPage:1,
+                // 每页查询的记录数
+                pageSize:5,
+                // 图书名称
+                queryString:""
+            },
+            // 新增对话框是否显示
+            addDialogVisible: false,
+            // 编辑对话框是否显示
+            editDialogVisible: false,
+            // 表单双向绑定
+            formData:{},
+            // 表单校验规则
+            rules:{
+                categoryId:[
+                    {required: true, message: '请选择图书分类', trigger: 'change' }
+                ],
+                name:[{required: true, message: '请输入图书名称', trigger: 'blur' }]
+            },
+            // 所有的分类信息
+            categories:[]
+        },
+        // 方法区
+        methods:{
+            // 当前页码变化后触发的函数
+            handleCurrentChange(currentPage){
+                this.pagination.currentPage = currentPage;
+                // 重新查询
+                this.getPage();
+            },
+            // 每页查询记录数变化后触发的函数
+            handleSizeChange(pageSize){
+                this.pagination.pageSize = pageSize;
+                // 重新查询
+                this.getPage();
+            },
+            // 分页查询
+            getPage(){
+                axios.post("http://localhost:80/book/page",this.pagination)
+                    .then(resp=>{
+                        // 判断是否成功
+                        if (resp.data.code == 1){
+                            // 将后台响应的集合赋值给tableData模
+                            this.tableData = resp.data.data.records;
+                            // 将后台响应的总记录数赋值给pagination.total
+                            this.pagination.total = resp.data.data.total;
+                        }else {
+                            // 失败，给出提示
+                            this.$message.error(resp.data.msg);
+                        }
+                    })
+            },
+            // 显示新增对话框
+            showAdd(){
+                this.addDialogVisible = true;
+                // 重置表单
+                this.formData = {}
+                // 查询所有分类
+                this.getCategories();
+            },
+            // 查询所有分类
+            getCategories(){
+                axios.get("http://localhost:80/category")
+                    .then(resp=>{
+                        if (resp.data.code == 1){
+                            this.categories = resp.data.data;
+                        }else {
+                            this.$message.error(resp.data.msg);
+                        }
+                    })
+            },
+            // 新增图书
+            handAdd(){
+                // 表单校验
+                this.$refs['addForm'].validate(valid=>{
+                    if (valid){
+                        // 校验通过，发送请求
+                        axios.post("http://localhost:80/book",this.formData)
+                            .then(resp=>{
+                                if (resp.data.code == 1){
+                                    // 重新分页查询
+                                    this.getPage();
+                                    // 给出提示
+                                    this.$message.success(resp.data.data);
+                                }else {
+                                    this.$message.error(resp.data.msg);
+                                }
+                            })
+                            .finally(()=>{
+                                // 关闭新增对话框
+                                this.addDialogVisible = false;
+                            })
+                    }else {
+                        // 校验失败，给出提示
+                        this.$message.error("请检查输入项");
+                    }
+                })
+            },
+            // 显示编辑对话框
+            showEdit(row){
+                this.editDialogVisible = true;
+            },
+            // 修改图书
+            handleEdit(){
+                this.$refs.editForm.validate(valid=>{
+                    if (valid){
+                        // 校验通过
+                    }else {
+                        // 校验失败，给出提示
+                        this.$message.error("请检查输入项");
+                    }
+                })
+            },
+            // 删除图书
+            handleDelete(row){
+                // 弹出确认取消对话框
+                this.$confirm("此操作将永久删除当前行数据，是否继续？","友情提示",{
+                    type:"warning"
+                }).then(resp=>{
+                    // 点击确定,发送请求
+                    axios.delete("http://localhost:80/book/"+row.id)
+                        .then(resp=>{
+                            if (resp.data.code == 1){
+                                // 重新分页查询
+                                this.getPage();
+                                // 给出提示
+                                this.$message.success(resp.data.data);
+                            }else {
+                                this.$message.error(resp.data.msg);
+                            }
+                        })
+                }).catch(()=>{
+                    // 点击取消
+                })
+            }
+        },
+        // 钩子函数
+        created(){
+            this.getPage();
+        }
+    })
+</script>
+</body>
+</html>
