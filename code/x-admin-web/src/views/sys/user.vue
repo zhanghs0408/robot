@@ -21,6 +21,10 @@
             icon="el-icon-search"
             >查询</el-button
           >
+          <el-button type="success" style="margin-left: 10px" @click="exp()">导出报表</el-button>
+          <el-upload action="http://localhost:8080/api/type/upload" style="display: inline-block; margin-left: 10px" :show-file-list="false" :on-success="successUpload">
+            <el-button size="small" type="primary">批量导入</el-button>
+          </el-upload>
         </el-col>
         <el-col :span="4" align="right">
           <el-button
@@ -198,6 +202,10 @@ export default {
         this.roleList = response.data;
         console.log(this.roleList);
       });
+    },
+    exp() {
+      let user = localStorage.getItem("user");
+      location.href = 'http://localhost:8080/api/type/export?token=' + JSON.parse(user).token
     },
     deleteUser(user){
       this.$confirm(`您确认删除用户 ${user.username} ?`, '提示', {

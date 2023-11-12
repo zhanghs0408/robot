@@ -34,6 +34,11 @@ import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
 
 export default {
+  data() {
+  return {
+    avatar: 'https://img.zcool.cn/community/01d89d556899f60000012716e4364f.jpg@1280w_1l_2o_100sh.jpg'
+  };
+},
   components: {
     Breadcrumb,
     Hamburger
